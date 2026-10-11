@@ -1,0 +1,151 @@
+{
+  "name": "teca",
+  "short_name": "teca",
+  "lang": "it",
+  "description": "Leggi pagine HTML, Markdown, testo, immagini, libri, fumetti, tabelle CSV, dati JSON e XML e codice, al sicuro sul tuo dispositivo.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EDEFEC",
+  "theme_color": "#EDEFEC",
+  "icons": [
+    {
+      "src": "icona-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icona-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icona-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": {
+        "text/html": [
+          ".html",
+          ".htm"
+        ],
+        "text/markdown": [
+          ".md",
+          ".markdown"
+        ],
+        "text/plain": [
+          ".txt"
+        ],
+        "image/jpeg": [
+          ".jpg",
+          ".jpeg"
+        ],
+        "image/png": [
+          ".png"
+        ],
+        "image/gif": [
+          ".gif"
+        ],
+        "image/webp": [
+          ".webp"
+        ],
+        "image/svg+xml": [
+          ".svg"
+        ],
+        "image/avif": [
+          ".avif"
+        ],
+        "image/heic": [
+          ".heic",
+          ".heif"
+        ],
+        "application/epub+zip": [
+          ".epub"
+        ],
+        "application/x-fictionbook+xml": [
+          ".fb2"
+        ],
+        "application/vnd.comicbook+zip": [
+          ".cbz"
+        ],
+        "text/csv": [
+          ".csv"
+        ],
+        "text/tab-separated-values": [
+          ".tsv"
+        ],
+        "application/json": [
+          ".json",
+          ".geojson"
+        ],
+        "application/xml": [
+          ".xml",
+          ".kml",
+          ".gpx"
+        ],
+        "text/x-python": [
+          ".py"
+        ],
+        "text/javascript": [
+          ".js",
+          ".mjs"
+        ],
+        "application/sql": [
+          ".sql"
+        ],
+        "text/css": [
+          ".css"
+        ]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "./condividi",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": [
+            "text/html",
+            ".html",
+            ".htm",
+            "text/markdown",
+            ".md",
+            ".markdown",
+            "text/plain",
+            ".txt",
+            "image/*",
+            "application/epub+zip",
+            ".epub",
+            ".fb2",
+            ".cbz",
+            "text/csv",
+            ".csv",
+            ".tsv",
+            "application/json",
+            ".json",
+            "application/xml",
+            "text/xml",
+            ".xml",
+            ".py",
+            ".js",
+            ".sql",
+            ".css"
+          ]
+        }
+      ]
+    }
+  }
+}
