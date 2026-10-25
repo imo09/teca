@@ -1,5 +1,5 @@
 // teca - service worker (generato da build.py)
-const CACHE = 'teca-v1.4';
+const CACHE = 'teca-v1.5';
 const FILE = ['./', 'index.html', 'manifest.webmanifest', 'icona.svg', 'favicon-32.png', 'favicon-16.png', 'icona-180.png', 'icona-192.png', 'icona-512.png', 'icona-maskable-512.png'];
 
 self.addEventListener('install', (e) => {

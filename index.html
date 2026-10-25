@@ -123,7 +123,8 @@ svg { display: block; flex: none; }
 .scheda .chiudi { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--tenue); flex: none; }
 .scheda.trascinata { z-index: 3; background: var(--carta); color: var(--inchiostro); border-color: var(--vetro); box-shadow: 0 10px 24px rgba(14, 29, 42, .2); transition: none; cursor: grabbing; }
 .nastro.trascina .scheda:not(.trascinata) { transition: none; }
-.piu { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--muto); flex: none; border: 1px solid var(--bordo); background: transparent; transition: background-color .15s, border-color .15s; }
+.piu { flex: none; height: 38px; min-width: 38px; padding: 0 9px; margin-left: 4px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--inchiostro); color: var(--fondo); font-size: 13.5px; font-weight: 600; white-space: nowrap; box-shadow: var(--ombra); transition: opacity .15s; }
+@media (min-width: 760px) { .piu { padding: 0 14px 0 10px; } }
 
 /* Area delle schede */
 .schermo { flex: 1; min-height: 0; position: relative; }
@@ -389,8 +390,8 @@ h2.etichetta { margin: 0; font-size: 12px; letter-spacing: .09em; text-transform
 }
 @media (hover: hover) {
   .marchio:hover, .tasto-icona:hover, .azione:hover, .interruttore:hover, .voce:hover, .segno:hover, .voce-indice:hover, .voce-tendina:hover { background: var(--riquadro); }
-  .tasto-icona:hover, .piu:hover, .azione:hover { color: var(--inchiostro); }
-  .piu:hover { background: color-mix(in srgb, var(--carta) 55%, transparent); border-color: var(--vetro); }
+  .tasto-icona:hover, .azione:hover { color: var(--inchiostro); }
+  .piu:hover { opacity: .86; }
   .azione[aria-expanded="true"]:hover, .azione[aria-pressed="true"]:not(.stella):hover { background: var(--inchiostro); color: var(--fondo); }
   .azione.stella[aria-pressed="true"]:hover { color: var(--ottone); }
   .scheda:not([aria-selected="true"]):not(.trascinata):hover { background: color-mix(in srgb, var(--carta) 55%, transparent); border-color: var(--vetro); color: var(--inchiostro); }
@@ -414,8 +415,8 @@ h2.etichetta { margin: 0; font-size: 12px; letter-spacing: .09em; text-transform
     <button class="marchio" id="bMarchio" type="button" aria-label="teca, apri i Recenti" title="Recenti"></button>
     <nav class="nastro" id="nastro" aria-label="Schede aperte">
       <div class="schede" id="schede" role="tablist" aria-label="Schede"></div>
-      <button class="piu" id="bPiu" type="button" aria-label="Apri file" title="Apri file"></button>
     </nav>
+    <button class="piu" id="bPiu" type="button" aria-label="Apri file" title="Apri file"></button>
     <button class="tasto-icona" id="bImpostazioni" type="button" aria-label="Impostazioni" title="Impostazioni" aria-pressed="false"></button>
   </header>
   <main class="schermo" id="schermo"></main>
@@ -431,7 +432,7 @@ h2.etichetta { margin: 0; font-size: 12px; letter-spacing: .09em; text-transform
 
 teca apre **pagine HTML**, **Markdown**, **testo**, **immagini**, **libri** (EPUB e FB2), **fumetti** (CBZ), **tabelle** (CSV), **dati** (JSON e XML) e **codice**, e li mostra al sicuro sul tuo dispositivo. Non li modifica e non li invia da nessuna parte.
 
-Questo stesso file è un Markdown: puoi leggerlo come guida e come esempio di ciò che teca sa mostrare. Gli altri esempi sono nei **Recenti**, alla voce *Esempi*.
+Questo stesso file è un Markdown: puoi leggerlo come guida e come esempio di ciò che teca sa mostrare. Gli altri esempi sono nei **Recenti**, alla voce *Esempi*: li trovi lì solo in questa prima apertura, poi restano i file che hai letto.
 
 ## Indice
 
@@ -918,11 +919,11 @@ r.addEventListener('input', calcola);
 <script>
 (function () {
   'use strict';
-  var VERSIONE = '1.4';
+  var VERSIONE = '1.5';
   var MAX_RECENTI = 20;
-  var MAX_TESTO = 10 * 1024 * 1024;
-  var MAX_IMMAGINE = 40 * 1024 * 1024;
-  var MAX_LIBRO = 150 * 1024 * 1024;
+  /* Nessun limite: oltre queste soglie teca avvisa che il file potrebbe aprirsi lento o bloccare la pagina, poi decide chi legge */
+  var MB = 1024 * 1024;
+  var SOGLIE = { html: 80 * MB, md: 30 * MB, txt: 50 * MB, codice: 20 * MB, csv: 100 * MB, json: 80 * MB, xml: 60 * MB, fb2: 100 * MB, img: 150 * MB, epub: 300 * MB, cbz: 500 * MB };
   var MAX_RIGHE_CSV = 5000;
   var MAX_NODI = 30000;
   var LETTURA = { md: 1, txt: 1, epub: 1, fb2: 1, cbz: 1, csv: 1, json: 1, xml: 1, codice: 1 };
@@ -2065,14 +2066,11 @@ r.addEventListener('input', calcola);
       mostraToast('«' + file.name + '» non è un formato che teca legge. L\'elenco è in Impostazioni, Formati leggibili.', true);
       return Promise.resolve();
     }
-    var limite = tipo === 'img' ? MAX_IMMAGINE : (tipo === 'epub' || tipo === 'cbz' || tipo === 'fb2') ? MAX_LIBRO : MAX_TESTO;
-    if (file.size > limite) {
-      mostraToast('«' + file.name + '» è troppo grande: per questo tipo teca apre file fino a ' + peso(limite) + '.', true);
-      return Promise.resolve();
-    }
     var chiave = 'file:' + file.name + '|' + file.size;
     var gia = schedaPer(chiave);
     if (gia) { attiva_(gia.id); return Promise.resolve(); }
+    var soglia = SOGLIE[tipo];
+    if (soglia && file.size > soglia && !window.confirm('«' + file.name + '» pesa ' + peso(file.size) + '. Per un file ' + TIPI[tipo] + ' oltre ' + peso(soglia) + ' l\'apertura può essere lenta o bloccare la pagina, soprattutto su telefono.\n\nVuoi aprirlo comunque?')) return Promise.resolve();
     var d = { tipo: tipo, nome: file.name, peso: file.size, chiave: chiave, mime: file.type, file: file };
     if (tipo === 'img') {
       d.url = URL.createObjectURL(file);
@@ -2283,7 +2281,7 @@ r.addEventListener('input', calcola);
       '<p class="suggerimento solo-mouse">Puoi anche trascinare i file in qualsiasi punto della finestra.</p>' +
       '</section>' +
       '<section aria-label="Recenti"><div class="intesta"><h2 class="etichetta">Recenti</h2><button class="svuota" type="button">Svuota</button></div><div class="lista"></div></section>' +
-      '<section aria-label="Esempi"><div class="intesta"><h2 class="etichetta">Esempi</h2></div><div class="esempi"></div></section>' +
+      (primaApertura ? '<section aria-label="Esempi"><div class="intesta"><h2 class="etichetta">Esempi</h2></div><div class="esempi"></div></section>' : '') +
       '<p class="piede">teca ricorda solo i nomi dei file e il punto in cui eri, mai il contenuto: i file restano dove sono, sul tuo dispositivo.</p>' +
       '</div></div>';
     var p = s.pannello;
@@ -2297,7 +2295,7 @@ r.addEventListener('input', calcola);
       recenti = []; salvaRecenti(); aggiornaRecenti(); mostraToast('Recenti svuotati. I Preferiti restano.');
     });
     var es = p.querySelector('.esempi');
-    Object.keys(ESEMPI).forEach(function (id) {
+    if (es) Object.keys(ESEMPI).forEach(function (id) {
       var e = ESEMPI[id], b = el('button', 'esempio');
       b.type = 'button';
       b.dataset.esempio = id;
@@ -2396,7 +2394,7 @@ r.addEventListener('input', calcola);
     pannello.querySelector('.svuota').hidden = !recenti.length;
     lista.innerHTML = '';
     if (!recenti.length) {
-      lista.appendChild(el('p', 'vuoto', 'Ancora nessun file. Quelli che apri compariranno qui, con il loro nome; intanto puoi provare gli esempi qui sotto.'));
+      lista.appendChild(el('p', 'vuoto', 'Ancora nessun file. Quelli che apri compariranno qui, con il loro nome' + (primaApertura ? '; intanto puoi provare gli esempi qui sotto.' : '.')));
       return;
     }
     recenti.forEach(function (r) { lista.appendChild(rigaVoce(r, { tag: true, data: true, togli: true })); });
@@ -3496,7 +3494,7 @@ r.addEventListener('input', calcola);
   /* ---------- avvio ---------- */
   $('#bMarchio').innerHTML = svgParola();
   $('#bImpostazioni').innerHTML = icona('impostazioni', 22, 1.6);
-  $('#bPiu').innerHTML = icona('piu', 20);
+  $('#bPiu').innerHTML = icona('piu', 20) + '<span class="solo-ampio">Apri file</span>';
   $('#rilascioFormati').innerHTML = formatiHtml();
   $('#bMarchio').addEventListener('click', function () { apriSpeciale('recenti'); });
   $('#bImpostazioni').addEventListener('click', function () { apriSpeciale('impostazioni'); });
@@ -3505,8 +3503,13 @@ r.addEventListener('input', calcola);
 
   var salvate = leggi('teca.schede');
   var conSalvate = salvate && Array.isArray(salvate.ordine) && salvate.ordine.length;
-  var iniziali = conSalvate ? salvate.ordine : [{ k: 'recenti' }, { k: 'esempio', id: 'es-md' }];
-  var daAttivare = conSalvate ? salvate.attiva : 1;
+  var primaApertura = !conSalvate && !leggi('teca.avviata');
+  scrivi('teca.avviata', true);
+  /* Benvenuto ed esempi solo alla prima apertura: dalla seconda le schede di esempio non tornano */
+  var iniziali = primaApertura ? [{ k: 'recenti' }, { k: 'esempio', id: 'es-md' }] :
+    conSalvate ? salvate.ordine.filter(function (k) { return k.k !== 'esempio'; }) : [{ k: 'recenti' }];
+  var giaAttiva = conSalvate && salvate.ordine[salvate.attiva];
+  var daAttivare = primaApertura ? 1 : Math.max(0, iniziali.indexOf(giaAttiva));
   var create = [];
   iniziali.forEach(function (k) {
     var d = null;
