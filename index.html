@@ -353,6 +353,12 @@ h2.etichetta { margin: 0; font-size: 12px; letter-spacing: .09em; text-transform
 .toast.errore { background: #A8473D; color: #FFFFFF; }
 .toast button { color: var(--ottone); font-weight: 600; flex: none; }
 .toast.errore button { color: #FFFFFF; text-decoration: underline; }
+.avviso { width: min(420px, calc(100% - 32px)); margin: auto; padding: 22px 22px 18px; border: 1px solid var(--bordo); border-radius: 16px; background: var(--carta); color: var(--inchiostro); box-shadow: var(--ombra-forte); }
+.avviso::backdrop { background: rgba(14, 29, 42, .45); }
+.avviso h2 { font-size: 17px; font-weight: 600; margin: 0 0 8px; }
+.avviso p { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--muto); overflow-wrap: anywhere; }
+.avviso-tasti { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.tasto.primario { background: var(--inchiostro); color: var(--fondo); border-color: var(--inchiostro); font-weight: 600; }
 .rilascio { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--fondo) 90%, transparent); }
 .rilascio div { display: grid; justify-items: center; gap: 12px; padding: 36px 44px; border: 2px dashed var(--ottone); border-radius: 20px; text-align: center; color: var(--muto); }
 .rilascio strong { color: var(--inchiostro); font-size: 18px; font-weight: 600; }
@@ -423,6 +429,7 @@ h2.etichetta { margin: 0; font-size: 12px; letter-spacing: .09em; text-transform
 </div>
 <button class="esci-immersiva" id="bEsci" type="button" aria-label="Esci dalla lettura immersiva" title="Esci dalla lettura immersiva" hidden></button>
 <input type="file" id="scegli" multiple hidden>
+<dialog class="avviso" id="avviso" aria-labelledby="avvisoTitolo" aria-describedby="avvisoTesto"><h2 id="avvisoTitolo"></h2><p id="avvisoTesto"></p><div class="avviso-tasti"><button class="tasto" type="button" id="avvisoNo">Annulla</button><button class="tasto primario" type="button" id="avvisoSi"></button></div></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toastTesto"></span><button type="button" id="toastAzione" hidden></button></div>
 <div class="rilascio" id="rilascio" hidden><div><strong>Lascia qui i file per aprirli</strong><span class="formati" id="rilascioFormati"></span></div></div>
 <div class="splash" id="splash" hidden><div class="splash-in" id="splashIn"></div></div>
@@ -432,7 +439,7 @@ h2.etichetta { margin: 0; font-size: 12px; letter-spacing: .09em; text-transform
 
 teca apre **pagine HTML**, **Markdown**, **testo**, **immagini**, **libri** (EPUB e FB2), **fumetti** (CBZ), **tabelle** (CSV), **dati** (JSON e XML) e **codice**, e li mostra al sicuro sul tuo dispositivo. Non li modifica e non li invia da nessuna parte.
 
-Questo stesso file è un Markdown: puoi leggerlo come guida e come esempio di ciò che teca sa mostrare. Gli altri esempi sono nei **Recenti**, alla voce *Esempi*: li trovi lì solo in questa prima apertura, poi restano i file che hai letto.
+Questo stesso file è un Markdown: puoi leggerlo come guida e come esempio di ciò che teca sa mostrare. Gli altri esempi sono nei **Recenti**, alla voce *Esempi*: li trovi lì in questa prima apertura e poi, quando vuoi, da Impostazioni, Mostra esempi.
 
 ## Indice
 
@@ -919,7 +926,7 @@ r.addEventListener('input', calcola);
 <script>
 (function () {
   'use strict';
-  var VERSIONE = '1.5';
+  var VERSIONE = '1.6';
   var MAX_RECENTI = 20;
   /* Nessun limite: oltre queste soglie teca avvisa che il file potrebbe aprirsi lento o bloccare la pagina, poi decide chi legge */
   var MB = 1024 * 1024;
@@ -1035,6 +1042,7 @@ r.addEventListener('input', calcola);
   /* ---------- impostazioni generali e personalizzazioni per file ---------- */
   var BASE = { tema: 'auto', font: 'sans', dimensione: 17, colonna: 640, interlinea: 1.65, sfondo: 'auto', trama: 'liscia', spessore: 1, passo: 24, allinea: 'sinistra', sillaba: 'no', sveglio: false, splash: true };
   var IMP = Object.assign({}, BASE, leggi('teca.impostazioni') || {});
+  var mostraEsempi = false;
   var VOCI = ['dimensione', 'sfondo', 'trama', 'spessore', 'passo', 'font', 'interlinea', 'colonna', 'allinea', 'sillaba'];
   var NOMI_VOCI = { dimensione: 'Grandezza', sfondo: 'Sfondo', trama: 'Trama', spessore: 'Trama', passo: 'Trama', font: 'Carattere', interlinea: 'Interlinea', colonna: 'Colonna', allinea: 'Allineamento', sillaba: 'Sillabazione' };
   var TESTUALI = { tema: 1, font: 1, sfondo: 1, trama: 1, allinea: 1, sillaba: 1 };
@@ -2070,7 +2078,13 @@ r.addEventListener('input', calcola);
     var gia = schedaPer(chiave);
     if (gia) { attiva_(gia.id); return Promise.resolve(); }
     var soglia = SOGLIE[tipo];
-    if (soglia && file.size > soglia && !window.confirm('«' + file.name + '» pesa ' + peso(file.size) + '. Per un file ' + TIPI[tipo] + ' oltre ' + peso(soglia) + ' l\'apertura può essere lenta o bloccare la pagina, soprattutto su telefono.\n\nVuoi aprirlo comunque?')) return Promise.resolve();
+    if (soglia && file.size > soglia) {
+      return chiediConferma('File molto grande', '«' + file.name + '» pesa ' + peso(file.size) + '. Per un file ' + TIPI[tipo] + ' oltre ' + peso(soglia) + ' l\'apertura può essere lenta o bloccare la pagina, soprattutto su telefono.', 'Apri comunque')
+        .then(function (si) { return si ? leggiFile(file, tipo, chiave) : null; });
+    }
+    return leggiFile(file, tipo, chiave);
+  }
+  function leggiFile(file, tipo, chiave) {
     var d = { tipo: tipo, nome: file.name, peso: file.size, chiave: chiave, mime: file.type, file: file };
     if (tipo === 'img') {
       d.url = URL.createObjectURL(file);
@@ -2281,7 +2295,7 @@ r.addEventListener('input', calcola);
       '<p class="suggerimento solo-mouse">Puoi anche trascinare i file in qualsiasi punto della finestra.</p>' +
       '</section>' +
       '<section aria-label="Recenti"><div class="intesta"><h2 class="etichetta">Recenti</h2><button class="svuota" type="button">Svuota</button></div><div class="lista"></div></section>' +
-      (primaApertura ? '<section aria-label="Esempi"><div class="intesta"><h2 class="etichetta">Esempi</h2></div><div class="esempi"></div></section>' : '') +
+      '<section aria-label="Esempi" data-sez-esempi><div class="intesta"><h2 class="etichetta">Esempi</h2></div><div class="esempi"></div></section>' +
       '<p class="piede">teca ricorda solo i nomi dei file e il punto in cui eri, mai il contenuto: i file restano dove sono, sul tuo dispositivo.</p>' +
       '</div></div>';
     var p = s.pannello;
@@ -2295,7 +2309,7 @@ r.addEventListener('input', calcola);
       recenti = []; salvaRecenti(); aggiornaRecenti(); mostraToast('Recenti svuotati. I Preferiti restano.');
     });
     var es = p.querySelector('.esempi');
-    if (es) Object.keys(ESEMPI).forEach(function (id) {
+    Object.keys(ESEMPI).forEach(function (id) {
       var e = ESEMPI[id], b = el('button', 'esempio');
       b.type = 'button';
       b.dataset.esempio = id;
@@ -2323,7 +2337,7 @@ r.addEventListener('input', calcola);
   }
   function aggiornaRecenti() {
     schede.forEach(function (s) {
-      if (s.tipo === 'recenti' && s.pannello) { disegnaPreferiti(s.pannello); disegnaLista(s.pannello); }
+      if (s.tipo === 'recenti' && s.pannello) { disegnaPreferiti(s.pannello); disegnaLista(s.pannello); s.pannello.querySelector('[data-sez-esempi]').hidden = !mostraEsempi; }
     });
     aggiornaImpostazioni();
   }
@@ -2394,7 +2408,7 @@ r.addEventListener('input', calcola);
     pannello.querySelector('.svuota').hidden = !recenti.length;
     lista.innerHTML = '';
     if (!recenti.length) {
-      lista.appendChild(el('p', 'vuoto', 'Ancora nessun file. Quelli che apri compariranno qui, con il loro nome' + (primaApertura ? '; intanto puoi provare gli esempi qui sotto.' : '.')));
+      lista.appendChild(el('p', 'vuoto', 'Ancora nessun file. Quelli che apri compariranno qui, con il loro nome' + (mostraEsempi ? '; intanto puoi provare gli esempi qui sotto.' : '.')));
       return;
     }
     recenti.forEach(function (r) { lista.appendChild(rigaVoce(r, { tag: true, data: true, togli: true })); });
@@ -2481,6 +2495,7 @@ r.addEventListener('input', calcola);
       }
       if (e.target.closest('[data-sveglio]')) { IMP.sveglio = !IMP.sveglio; salvaImp(); dopoImpostazioni(); aggiornaSveglia(); return; }
       if (e.target.closest('[data-splash]')) { IMP.splash = !IMP.splash; salvaImp(); dopoImpostazioni(); }
+      if (e.target.closest('[data-esempi]')) { mostraEsempi = IMP.esempi = !mostraEsempi; salvaImp(); aggiornaRecenti(); }
     });
     contenitore.addEventListener('input', function (e) {
       var r = e.target;
@@ -2507,6 +2522,7 @@ r.addEventListener('input', calcola);
     radice.querySelectorAll('[data-passo="1"]').forEach(function (b) { b.disabled = E.dimensione >= LIMITI.dimensione[1]; });
     radice.querySelectorAll('[data-sveglio]').forEach(function (b) { aria(b, 'aria-checked', IMP.sveglio); });
     radice.querySelectorAll('[data-splash]').forEach(function (b) { aria(b, 'aria-checked', IMP.splash); });
+    radice.querySelectorAll('[data-esempi]').forEach(function (b) { aria(b, 'aria-checked', mostraEsempi); });
     radice.querySelectorAll('.quadro').forEach(function (q) {
       var P = paletta(E.sfondo);
       q.style.backgroundColor = P.bg; q.style.setProperty('--tc', P.scuro ? P.muto : P.muto);
@@ -2576,6 +2592,8 @@ r.addEventListener('input', calcola);
       '</div></section>' +
       '<section class="sezione"><h2 class="etichetta">Recenti</h2><div class="riquadro">' +
       '<div class="riga"><div><div class="nome-riga" data-conta></div><div class="nota">Solo nomi e punto di lettura: il contenuto dei file non viene salvato. I Preferiti restano anche svuotando i Recenti.</div></div><button class="tasto svuota-imp" type="button">Svuota</button></div>' +
+      '<div class="riga"><div><div class="nome-riga">Mostra esempi</div><div class="nota">Pagine, libri, tabelle e dati di prova in fondo ai Recenti, con la guida Benvenuto in teca.</div></div>' +
+      '<button class="interruttore" type="button" role="switch" data-esempi aria-label="Mostra esempi"><span class="pista"></span></button></div>' +
       '</div></section>' +
       '<section class="sezione" id="sez-formati"><h2 class="etichetta">Formati leggibili</h2><div class="riquadro">' +
       FORMATI.map(function (f) {
@@ -3462,6 +3480,32 @@ r.addEventListener('input', calcola);
   }
   function nascondiToast() { toast.classList.remove('su'); }
 
+  /* Conferma nello stile di teca: risolve true se chi legge sceglie di proseguire */
+  var avviso = $('#avviso'), codaAvvisi = Promise.resolve();
+  function chiediConferma(titolo, testo, testoSi) {
+    var p = codaAvvisi.then(function () {
+      return new Promise(function (fatto) {
+        $('#avvisoTitolo').textContent = titolo;
+        $('#avvisoTesto').textContent = testo;
+        $('#avvisoSi').textContent = testoSi;
+        function fine(si) {
+          avviso.removeEventListener('close', suChiudi);
+          if (avviso.open) avviso.close();
+          fatto(si);
+        }
+        /* un close rimasto in coda dall'avviso precedente arriva a finestra già riaperta: si ignora */
+        function suChiudi() { if (!avviso.open) fine(false); }
+        $('#avvisoSi').onclick = function () { fine(true); };
+        $('#avvisoNo').onclick = function () { fine(false); };
+        avviso.addEventListener('close', suChiudi);
+        if (avviso.showModal) { avviso.showModal(); $('#avvisoSi').focus(); }
+        else fine(window.confirm(titolo + '\n\n' + testo));
+      });
+    });
+    codaAvvisi = p.then(null, function () {});
+    return p;
+  }
+
   /* ---------- tema che cambia da fuori ---------- */
   if (window.matchMedia) {
     var mq = matchMedia('(prefers-color-scheme: dark)');
@@ -3505,6 +3549,7 @@ r.addEventListener('input', calcola);
   var conSalvate = salvate && Array.isArray(salvate.ordine) && salvate.ordine.length;
   var primaApertura = !conSalvate && !leggi('teca.avviata');
   scrivi('teca.avviata', true);
+  mostraEsempi = primaApertura || !!IMP.esempi;
   /* Benvenuto ed esempi solo alla prima apertura: dalla seconda le schede di esempio non tornano */
   var iniziali = primaApertura ? [{ k: 'recenti' }, { k: 'esempio', id: 'es-md' }] :
     conSalvate ? salvate.ordine.filter(function (k) { return k.k !== 'esempio'; }) : [{ k: 'recenti' }];
